@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <DebugType>embedded</DebugType>
+
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>QtKaneko.SignalR.Client</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Kaneko Qt</Authors>
+    <Description>Simple SignalR client with minimal allocation and no dependencies. ONLY WebSocket + JSON protocol is supported!</Description>
+    <Copyright>Copyright © Kaneko Qt 2023</Copyright>
+    <RepositoryUrl>https://github.com/qt-kaneko/QtKaneko.SignalR.Client</RepositoryUrl>
+    <PackageIcon>ICON.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>SignalR;Client</PackageTags>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="ICON.png" Pack="true" PackagePath=""/>
+    <None Include="README.md" Pack="true" PackagePath=""/>
+    <None Include="LICENSE" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+</Project>

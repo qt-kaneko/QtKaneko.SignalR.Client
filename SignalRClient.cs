@@ -45,7 +45,7 @@ public struct SignalRClient
       cancellationToken
     );
 
-    while (true)
+    while (!cancellationToken.IsCancellationRequested)
     {
       var messageJson = await _webSocket.ReceiveStringAsync(cancellationToken);
 

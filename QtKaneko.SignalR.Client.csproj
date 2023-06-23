@@ -12,7 +12,7 @@
 
   <PropertyGroup>
     <PackageId>QtKaneko.SignalR.Client</PackageId>
-    <Version>1.0.0</Version>
+    <Version>2.0.0</Version>
     <Authors>Kaneko Qt</Authors>
     <Description>Simple SignalR client with minimal allocation and no dependencies. ONLY WebSocket + JSON protocol is supported!</Description>
     <Copyright>Copyright © Kaneko Qt 2023</Copyright>

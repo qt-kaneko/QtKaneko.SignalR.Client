@@ -50,7 +50,7 @@ public struct SignalRClient
       var messageJson = await _webSocket.ReceiveStringAsync(cancellationToken);
 
       #if DEBUG
-        System.Diagnostics.Debug.WriteLine(($"[Receive] {messageJson}"));
+        System.Diagnostics.Debug.WriteLine(($"[Receive 📥]\n{messageJson}"));
       #endif
 
       foreach (var recordJson in messageJson.Split("", StringSplitOptions.RemoveEmptyEntries))
@@ -74,7 +74,7 @@ public struct SignalRClient
     var messageJson = JsonSerializer.Serialize(message, _options);
 
     #if DEBUG
-      System.Diagnostics.Debug.WriteLine(($"[Send] {messageJson}"));
+      System.Diagnostics.Debug.WriteLine(($"[Send 📤]\n{messageJson}"));
     #endif
 
     await _webSocket.SendAsync(

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -12,9 +12,9 @@
 
   <PropertyGroup>
     <PackageId>QtKaneko.SignalR.Client</PackageId>
-    <Version>2.0.0</Version>
+    <Version>3.0.0</Version>
     <Authors>Kaneko Qt</Authors>
-    <Description>Simple SignalR client with minimal allocation and no dependencies. ONLY WebSocket + JSON protocol is supported!</Description>
+    <Description>Simple lightweight SignalR client with no dependencies. ONLY WebSocket + JSON protocol is supported!</Description>
     <Copyright>Copyright © Kaneko Qt 2023</Copyright>
     <RepositoryUrl>https://github.com/qt-kaneko/QtKaneko.SignalR.Client</RepositoryUrl>
     <PackageIcon>ICON.png</PackageIcon>

@@ -1,9 +1,11 @@
+using System.Buffers;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 using QtKaneko.SignalR.Client.Extensions;
 using QtKaneko.SignalR.Client.Messages;
 
@@ -15,7 +17,8 @@ namespace QtKaneko.SignalR.Client;
 /// <remarks> ONLY WebSocket + JSON protocol is supported! </remarks>
 public struct SignalRClient
 {
-  static readonly JsonSerializerOptions _options = new() {
+  const int _messageCapacity = 32768;
+  static readonly JsonSerializerOptions _json = new() {
     IncludeFields = true,
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -33,55 +36,63 @@ public struct SignalRClient
   /// <param name="uri"> The URI of the WebSocket server to connect to. </param>
   public async IAsyncEnumerable<IMessage> ConnectAsync(Uri uri,
                                                        [EnumeratorCancellation]
-                                                       CancellationToken cancellationToken = default)
+                                                       CancellationToken ct = default)
   {
-    await _webSocket.ConnectAsync(uri, cancellationToken);
+    await _webSocket.ConnectAsync(uri, ct).ConfigureAwait(false);
 
-    await SendAsync(
-      new HandshakeRequest() {
-        Protocol = "json",
-        Version = 1
-      },
-      cancellationToken
-    );
+    await this.SendAsync(new HandshakeRequest() {Protocol = "json", Version = 1}, ct)
+              .ConfigureAwait(false);
 
-    while (!cancellationToken.IsCancellationRequested)
+    while (_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.CloseSent
+           && !ct.IsCancellationRequested)
     {
-      var messageJson = await _webSocket.ReceiveStringAsync(cancellationToken);
+      var messageBuffer = ArrayPool<byte>.Shared.Rent(_messageCapacity);
+
+      (var message, var messageBytes) = await _webSocket.ReceiveToEndAsync(messageBuffer, ct)
+                                                        .ConfigureAwait(false);
 
       #if DEBUG
-        System.Diagnostics.Debug.WriteLine(($"[Receive 📥]\n{messageJson}"));
+        var debugMessageJson = Encoding.UTF8.GetString(messageBytes);
+
+        System.Diagnostics.Debug.WriteLine($"[Receive 🔽]\n{debugMessageJson}");
       #endif
 
-      foreach (var recordJson in messageJson.Split("", StringSplitOptions.RemoveEmptyEntries))
+      foreach (var recordBytes in messageBytes.Split((byte)'', ArraySegmentSplitOptions.RemoveEmptyEntries))
       {
-        var record = JsonSerializer.Deserialize<IMessage>(recordJson, _options)!;
+        var record = JsonSerializer.Deserialize<IMessage>(recordBytes, _json)!;
 
+        if (record is Ping) await SendAsync(new Ping()).ConfigureAwait(false);
+        
         yield return record;
-
-        if (record is Ping) await SendAsync(new Ping());
-        else if (record is Completion) yield break;
       }
+
+      ArrayPool<byte>.Shared.Return(messageBuffer);
     }
   }
 
   /// <summary> Sends <paramref name="message"/> to connected WebSocket. </summary>
   /// <param name="message"> Message to send. </param>
   public async ValueTask SendAsync<TMessage>(TMessage message,
-                                             CancellationToken cancellationToken = default)
+                                             CancellationToken ct = default)
   where TMessage : IMessage
   {
-    var messageJson = JsonSerializer.Serialize(message, _options);
+    var messageBuffer = ArrayPool<byte>.Shared.Rent(_messageCapacity);
+
+    using var messageStream = new MemoryStream(messageBuffer, 0, messageBuffer.Length, true, true);
+    JsonSerializer.Serialize(messageStream, message, _json);
+    messageStream.Write(stackalloc byte[] {(byte)''});
+
+    var messageBytes = new Memory<byte>(messageBuffer, 0, (int)messageStream.Position);
 
     #if DEBUG
-      System.Diagnostics.Debug.WriteLine(($"[Send 📤]\n{messageJson}"));
+      var debugMessageJson = Encoding.UTF8.GetString(messageBytes.Span);
+
+      System.Diagnostics.Debug.WriteLine($"[Send 🔼]\n{debugMessageJson}");
     #endif
 
-    await _webSocket.SendAsync(
-      Encoding.UTF8.GetBytes(messageJson + ""),
-      WebSocketMessageType.Text,
-      true,
-      cancellationToken
-    );
+    await _webSocket.SendAsync(messageBytes, WebSocketMessageType.Text, true, ct)
+                    .ConfigureAwait(false);
+
+    ArrayPool<byte>.Shared.Return(messageBuffer);
   }
 }
